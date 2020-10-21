@@ -1,0 +1,139 @@
+<!doctype html> 
+<html>
+  <meta charset='utf-8'>
+  <head>
+    <title>ImgCrypt</title>
+  </head>
+  <body style="color: #000000; background-color: #000000">
+    <!--<canvas id='example'>Update your browser</canvas>-->
+	<img src="" id=imgConverted style="float: left; margin-left: 10px;">
+    <script>
+	
+	function RandomRangeInclusive(min,max){
+		min=Math.ceil(min);
+		max=Math.floor(max);
+		return Math.floor(Math.random()*(max-min+1))+min;
+	}
+	
+	function CryptImage(Turns,srcPic){
+		if (Turns>16777215){return;}
+		if (typeof(srcPic)!="string") {return;}
+		if (srcPic==''){return;}
+		if (typeof(Turns)!="bigint") {Turns=0}
+	
+		let cObject = document.createElement("canvas");
+		pic=new Image();
+		pic.src=srcPic;
+		pic.onload = function(){
+			if ((pic.width==0)|(pic.height==0)){return;}
+			cObject.width=pic.width;
+			cObject.height=pic.height;
+
+			ctx = cObject.getContext('2d');
+			ctx.drawImage(pic,0,0);
+
+			let imageData = ctx.getImageData(0,0,cObject.width,cObject.height);
+			
+			for (let t=Turns; t>0; t--){
+				for (let i=1; i<imageData.data.length; i++){
+					imageData.data[i]=imageData.data[i]^imageData.data[i-1];
+				}
+				imageData.data[0]=imageData.data[0]^imageData.data[imageData.data.length-1];
+			}
+			
+			//
+			let destC = document.createElement("canvas");
+			//destC.width=Math.ceil(((4*pic.width*pic.height+4*pic.width*pic.height/3.0+8)/pic.height)/4);
+			//destC.height=pic.height;
+			let buf=(imageData.data.length+imageData.data.length/3.0+12)/4.0;
+			destC.width=Math.ceil(Math.sqrt(buf));
+			destC.height=destC.width;
+			ctxd=destC.getContext('2d');
+			let destData=ctxd.getImageData(0,0,destC.width,destC.height);
+			destData.data[0]=pic.width & 0x000000FF;
+			destData.data[1]=(pic.width >> 8)  & 0x000000FF;
+			destData.data[2]=(pic.width >> 16)  & 0x000000FF;
+			destData.data[3]=255;
+			destData.data[4]=pic.height & 0x000000FF;
+			destData.data[5]=(pic.height >> 8)  & 0x000000FF;
+			destData.data[6]=(pic.height >> 16)  & 0x000000FF;
+			destData.data[7]=255;
+			destData.data[8]=Turns & 0x000000FF;
+			destData.data[9]=(Turns >> 8)  & 0x000000FF;
+			destData.data[10]=(Turns >> 16)  & 0x000000FF;
+			destData.data[11]=255;
+			
+			
+			let corr=12;
+			for(let j=0; j<imageData.data.length; j++){
+			if ((corr+1)%4==0){destData.data[corr++]=255}
+			destData.data[corr++]=imageData.data[j];
+			}
+			
+			for (corr=corr; corr<destData.data.length; corr++){
+			if ((corr+1)%4==0) {destData.data[corr]=255;} else {destData.data[corr]=RandomRangeInclusive(1,255);}
+			}
+			//
+			
+			ctxd.putImageData(destData,0,0);
+
+			const dataURI=destC.toDataURL();
+			imgConverted.src=dataURI;
+		}
+	}
+	
+	function DecryptImage(srcPic){
+		if (typeof(srcPic)!="string") {return;}
+		if (srcPic==''){return;}
+		let cObject=document.createElement("canvas");
+		pic=new Image();
+		pic.src=srcPic;
+		pic.onload=function(){	
+			if ((pic.width==0)|(pic.height==0)){return;}
+			cObject.width=pic.width;
+			cObject.height=pic.height;
+
+			ctx=cObject.getContext('2d');
+			ctx.drawImage(pic,0,0);
+
+			let imageData=ctx.getImageData(0,0,cObject.width,cObject.height);
+			
+			//
+			let destC=document.createElement("canvas");
+			destC.width=imageData.data[0]|(imageData.data[1]<<8)|(imageData.data[2]<<16);
+			destC.height=imageData.data[4]|(imageData.data[5]<<8)|(imageData.data[6]<<16);
+			ctxd = destC.getContext('2d');
+			let destData = ctxd.getImageData(0,0,destC.width,destC.height);
+
+			let corr = 0;
+			for(let j=12; j<imageData.data.length; j++){
+			if (corr>=destData.data.length){break;}
+			if ((j+1)%4!=0){destData.data[corr++]=imageData.data[j];};
+			}
+			//
+			
+			let Turns=imageData.data[8]|(imageData.data[9]<<8)|(imageData.data[10]<<16);
+			
+			for (let t=Turns; t>0; t--){
+				destData.data[0]=destData.data[0]^destData.data[destData.data.length-1];
+				for (let i=destData.data.length-1; i>0; i--){
+					destData.data[i]=destData.data[i]^destData.data[i-1];
+				}		
+			}
+
+			ctxd.putImageData(destData,0,0);
+
+			const dataURI=destC.toDataURL();
+			imgConverted.src=dataURI;
+		}
+	}
+	
+const searchString=new URLSearchParams(window.location.search);
+const src=searchString.get('src');
+const turns=searchString.get('turns');
+const dc=searchString.get('dc');
+if (dc>0){DecryptImage(src);} else {CryptImage(turns,src);}
+
+    </script>
+  </body>
+</html>
