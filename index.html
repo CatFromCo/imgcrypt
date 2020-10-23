@@ -16,6 +16,10 @@
 
 		
     <script>
+	const searchString=new URLSearchParams(window.location.search);
+	const src=searchString.get('src');
+	const urlTurns=Number(searchString.get('turns'));
+	const dc=searchString.get('dc');
 	
 	function RandomRangeInclusive(min,max){
 		min=Math.ceil(min);
@@ -24,11 +28,9 @@
 	}
 	
 	function EncryptImage(srcPic,Turns){
+		Turns=Number(Turns);
+		if(isNaN(Turns)) {return;}
 		if (Turns>16777215){return;}
-		//if (typeof(srcPic)!="string") {return;}
-		//if (srcPic==''){return;}
-		if (typeof(Turns)!="bigint") {Turns=0}
-	
 		let cObject = document.createElement("canvas");
 		pic=new Image();
 		pic.crossOrigin = "Anonymous";
@@ -151,7 +153,7 @@ let reader = new FileReader();
 reader.readAsDataURL(file);
 	reader.onload = readerEvent => {
       var content = readerEvent.target.result; // this is the content!
-	  if (Sender==eb){EncryptImage(content,0)} else {DecryptImage(content)}
+	  if (Sender==eb){EncryptImage(content,urlTurns)} else {DecryptImage(content)}
 	 }
 	reader.onerror = function(event){
 	alert("File can not be readed. Code: "+event.target.error.code);
@@ -170,7 +172,7 @@ input.onchange = e => {
    // here we tell the reader what to do when it's done reading...
    reader.onload = readerEvent => {
       var content = readerEvent.target.result; // this is the content!
-	  if (Sender==eb){EncryptImage(content,0)} else {DecryptImage(content)}
+	  if (Sender==eb){EncryptImage(content,urlTurns)} else {DecryptImage(content)}
    }
    
 	reader.onerror = function(event){
@@ -225,16 +227,9 @@ db.addEventListener("dragenter",DragEnter,false);
 db.addEventListener("dragleave",DragLeave,false);
 db.addEventListener("drop",Drop,false);
 
+if (typeof(src)=="string"&&src!='') {if (dc>0){DecryptImage(src);} else {EncryptImage(src,urlTurns);}}
 
-	
-const searchString=new URLSearchParams(window.location.search);
-const src=searchString.get('src');
-const turns=searchString.get('turns');
-const dc=searchString.get('dc');
-
-if (dc>0){DecryptImage(src);} else {EncryptImage(content,turns);}
-
-    </script>
+	</script>
 
   </body>
 </html>
