@@ -48,7 +48,7 @@
 		if (Turns>16777215){return;}
 		let cObject = document.createElement("canvas");
 		pic=new Image();
-		//pic.crossOrigin = "anonymous";
+		pic.crossOrigin = "anonymous";
 		pic.src=srcPic;
 		pic.onload = function(){
 			if ((pic.width==0)|(pic.height==0)){return;}
